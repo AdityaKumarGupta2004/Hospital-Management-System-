@@ -1,60 +1,79 @@
 package com.learningJava.Hospital.Management.System.service;
 
+
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
-import com.learningJava.Hospital.Management.System.entity.Appointment;
-import com.learningJava.Hospital.Management.System.entity.Doctor;
-import com.learningJava.Hospital.Management.System.entity.Patient;
 import com.learningJava.Hospital.Management.System.repository.AppointmentRepository;
 import com.learningJava.Hospital.Management.System.repository.DoctorRepository;
 import com.learningJava.Hospital.Management.System.repository.PatientRepository;
+import com.learningJava.Hospital.Management.System.dto.AppointmentResponseDto;
+import com.learningJava.Hospital.Management.System.dto.CreateAppointmentRequestDto;
+import com.learningJava.Hospital.Management.System.entity.Appointment;
+import com.learningJava.Hospital.Management.System.entity.Doctor;
+import com.learningJava.Hospital.Management.System.entity.Patient;
 
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AppointmentService {
-    
+
     private final AppointmentRepository appointmentRepository;
-    private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
+    private final PatientRepository patientRepository;
+    private final ModelMapper modelMapper;
 
     @Transactional
-    public Appointment createNewAppointment(Appointment appointment,Long doctorId, Long patientId) {
-        // TODO Auto-generated method stub
-        Doctor doctor = doctorRepository.findById(doctorId).orElseThrow(()-> new RuntimeException("Doctor not found"));
-        Patient patient = patientRepository.findById(patientId).orElseThrow(()-> new RuntimeException("Patient not found"));
+    @Secured("ROLE_PATIENT")
+    public AppointmentResponseDto createNewAppointment(CreateAppointmentRequestDto createAppointmentRequestDto) {
+        Long doctorId = createAppointmentRequestDto.getDoctorId();
+        Long patientId = createAppointmentRequestDto.getPatientId();
 
-        if(appointment.getId()!=null){
-            throw new RuntimeException("Appointment ID must be null for new appointment");
-        }       
-        appointment.setDoctor(doctor);
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + patientId));
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new EntityNotFoundException("Doctor not found with ID: " + doctorId));
+        Appointment appointment = Appointment.builder()
+                .reason(createAppointmentRequestDto.getReason())
+                .appointmentTime(createAppointmentRequestDto.getAppointmentTime())
+                .build();
+
         appointment.setPatient(patient);
+        appointment.setDoctor(doctor);
+        patient.getAppointments().add(appointment); // to maintain consistency
 
-
-        patient.getAppointments().add(appointment);
-        doctor.getAppointments().add(appointment);
-        
-       return appointmentRepository.save(appointment);
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+        return modelMapper.map(savedAppointment, AppointmentResponseDto.class);
     }
+
     @Transactional
-    public Appointment reAssignAppointmentToAnotherDoctor(Long appointmentId,
-                                                          Long newDoctorId) {
+    @PreAuthorize("hasAuthority('appointment:write') or #doctorId == authentication.principal.id")
+    public Appointment reAssignAppointmentToAnotherDoctor(Long appointmentId, Long doctorId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow();
+        Doctor doctor = doctorRepository.findById(doctorId).orElseThrow();
 
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        appointment.setDoctor(doctor); // this will automatically call the update, because it is dirty
 
-        Doctor newDoctor = doctorRepository.findById(newDoctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
-
-        Doctor oldDoctor = appointment.getDoctor();
-        if (oldDoctor != null) {
-            oldDoctor.getAppointments().remove(appointment);
-        }
-
-        newDoctor.getAppointments().add(appointment);
+        doctor.getAppointments().add(appointment); // just for bidirectional consistency
 
         return appointment;
+    }
+
+    @PreAuthorize("hasRole('ADMIN') OR (hasRole('DOCTOR') AND #doctorId == authentication.principal.id)")
+    public List<AppointmentResponseDto> getAllAppointmentsOfDoctor(Long doctorId) {
+        Doctor doctor = doctorRepository.findById(doctorId).orElseThrow();
+
+        return doctor.getAppointments()
+                .stream()
+                .map(appointment -> modelMapper.map(appointment, AppointmentResponseDto.class))
+                .collect(Collectors.toList());
     }
 }
