@@ -1,6 +1,5 @@
 package com.learningJava.Hospital.Management.System.security;
 
-
 import com.learningJava.Hospital.Management.System.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -29,17 +28,18 @@ public class AuthUtil {
                 .subject(user.getUsername())
                 .claim("userId", user.getId().toString())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000*60*10))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 10))
                 .signWith(getSecretKey())
                 .compact();
     }
 
     public String getUsernameFromToken(String token) {
-        Claims claims =  Jwts.parser()
+        Claims claims = Jwts.parser()
                 .verifyWith(getSecretKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
         return claims.getSubject();
     }
+
 }

@@ -31,7 +31,7 @@ public class Patient {
     @Column(nullable = false, length = 40)
     private String name;
 
-//    @ToString.Exclude
+    // @ToString.Exclude
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 
@@ -47,7 +47,7 @@ public class Patient {
     @Enumerated(EnumType.STRING)
     private BloodGroupType bloodGroup;
 
-    @OneToOne(cascade = {CascadeType.ALL}, orphanRemoval = true)
+    @OneToOne(cascade = { CascadeType.ALL }, orphanRemoval = true)
     @JoinColumn(name = "patient_insurance_id") // owning side
     private Insurance insurance;
 
