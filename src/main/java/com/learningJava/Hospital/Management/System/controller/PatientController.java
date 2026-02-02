@@ -4,11 +4,13 @@ package com.learningJava.Hospital.Management.System.controller;
 import com.learningJava.Hospital.Management.System.dto.AppointmentResponseDto;
 import com.learningJava.Hospital.Management.System.dto.CreateAppointmentRequestDto;
 import com.learningJava.Hospital.Management.System.dto.PatientResponseDto;
+import com.learningJava.Hospital.Management.System.entity.User;
 import com.learningJava.Hospital.Management.System.service.AppointmentService;
 import com.learningJava.Hospital.Management.System.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,8 +28,8 @@ public class PatientController {
 
     @GetMapping("/profile")
     private ResponseEntity<PatientResponseDto> getPatientProfile() {
-        Long patientId = 4L;
-        return ResponseEntity.ok(patientService.getPatientById(patientId));
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(patientService.getPatientById(user.getId()));
     }
 
 }

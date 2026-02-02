@@ -1,9 +1,7 @@
 package com.learningJava.Hospital.Management.System.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,6 +10,7 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.learningJava.Hospital.Management.System.entity.type.BloodGroupType;
+
 
 @Entity
 @Getter
@@ -22,6 +21,9 @@ import com.learningJava.Hospital.Management.System.entity.type.BloodGroupType;
 }, indexes = {
         @Index(name = "idx_patient_dob", columnList = "birth_date")
 })
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Patient {
 
     @Id
@@ -32,13 +34,17 @@ public class Patient {
     private String name;
 
     // @ToString.Exclude
-    @Column(name = "birth_date", nullable = false)
+    @Column(name = "birth_date", nullable = true)
     private LocalDate birthDate;
 
     @Column(unique = true, nullable = false)
     private String email;
 
     private String gender;
+
+    @OneToOne
+    @MapsId
+    private User user;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
@@ -54,4 +60,5 @@ public class Patient {
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<Appointment> appointments;
+
 }
