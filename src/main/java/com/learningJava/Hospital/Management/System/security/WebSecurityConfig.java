@@ -5,7 +5,9 @@ import com.learningJava.Hospital.Management.System.entity.type.RoleType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 
@@ -18,10 +20,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import static com.learningJava.Hospital.Management.System.entity.type.RoleType.*;
+import static com.learningJava.Hospital.Management.System.entity.type.PermissionType.*;
 
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
+@EnableMethodSecurity
 public class WebSecurityConfig {
 
         private final JwtAuthFilter jwtAuthFilter;
@@ -36,6 +40,9 @@ public class WebSecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/public/**", "/auth/**").permitAll()
                                                 // .requestMatchers("/admin/**").authenticated()
+                                        .requestMatchers(HttpMethod.DELETE, "/admin/**")
+                                        .hasAnyAuthority(APPOINTMENT_DELETE.name(),
+                                                USER_MANAGE.name())
                                         .requestMatchers("/admin/**").hasRole(ADMIN.name())
                                         .requestMatchers("/doctors/**").hasAnyRole(DOCTOR.name(), ADMIN.name())
                                                 .anyRequest().authenticated())
@@ -49,7 +56,7 @@ public class WebSecurityConfig {
                         )
                         .exceptionHandling(exceptionHandlingConfigurer ->
                                 exceptionHandlingConfigurer.accessDeniedHandler((request, response, accessDeniedException) -> {
-                                        handlerExceptionResolver.resolveException(request, response, null, accessDeniedException);
+                                    handlerExceptionResolver.resolveException(request, response, null, accessDeniedException);
                                 }));
 
 

@@ -2,6 +2,7 @@ package com.learningJava.Hospital.Management.System.entity;
 
 import com.learningJava.Hospital.Management.System.entity.type.AuthProviderType;
 import com.learningJava.Hospital.Management.System.entity.type.RoleType;
+import com.learningJava.Hospital.Management.System.security.RolePermissionMapping;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
@@ -48,19 +49,18 @@ public class User implements UserDetails {
 
         @Override
         public Collection<? extends GrantedAuthority> getAuthorities() {
-                 return roles.stream()
-                 .map(role -> new SimpleGrantedAuthority("ROLE_"+role.name()))
-                 .collect(Collectors.toSet());
-                // Set<SimpleGrantedAuthority> authorities = new HashSet<>();
-                // roles.forEach(
-                // role -> {
-                // Set<SimpleGrantedAuthority> permissions =
-                // RolePermissionMapping.getAuthoritiesForRole(role);
-                // authorities.addAll(permissions);
-                // authorities.add(new SimpleGrantedAuthority("ROLE_"+role.name()));
-                // }
-                // );
-                // return authorities;
+                // return roles.stream()
+                // .map(role -> new SimpleGrantedAuthority("ROLE_"+role.name()))
+                // .collect(Collectors.toSet());
+                Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+                roles.forEach(
+                                role -> {
+                                        Set<SimpleGrantedAuthority> permissions = RolePermissionMapping
+                                                        .getAuthoritiesForRole(role);
+                                        authorities.addAll(permissions);
+                                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
+                                });
+                return authorities;
 //                return List.of();
         }
 }
