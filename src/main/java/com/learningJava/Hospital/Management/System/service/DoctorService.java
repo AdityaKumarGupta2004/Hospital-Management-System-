@@ -14,7 +14,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.hibernate.annotations.Cache;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +34,7 @@ public class DoctorService {
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
 
+    @Cacheable(cacheNames = "doctors")
     public List<DoctorResponseDto> getAllDoctors() {
         return doctorRepository.findAll()
                 .stream()

@@ -4,7 +4,11 @@ package com.learningJava.Hospital.Management.System.service;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
+import org.hibernate.annotations.Cache;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,7 @@ public class AppointmentService {
 
     @Transactional
     @Secured("ROLE_PATIENT")
+    @Cacheable(cacheNames = "appointments", key = "#result.patientId")
     public AppointmentResponseDto createNewAppointment(CreateAppointmentRequestDto createAppointmentRequestDto) {
         Long doctorId = createAppointmentRequestDto.getDoctorId();
         Long patientId = createAppointmentRequestDto.getPatientId();
@@ -55,6 +60,7 @@ public class AppointmentService {
     }
 
     @Transactional
+    @CachePut(cacheNames = "appointments", key = "#result.patientId")
     @PreAuthorize("hasAuthority('appointment:write') or #doctorId == authentication.principal.id")
     public Appointment reAssignAppointmentToAnotherDoctor(Long appointmentId, Long doctorId) {
         Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow();
@@ -68,6 +74,7 @@ public class AppointmentService {
     }
 
     @PreAuthorize("hasRole('ADMIN') OR (hasRole('DOCTOR') AND #doctorId == authentication.principal.id)")
+    @Cacheable(cacheNames = "doctorAppointments", key = "#doctorId")
     public List<AppointmentResponseDto> getAllAppointmentsOfDoctor(Long doctorId) {
         Doctor doctor = doctorRepository.findById(doctorId).orElseThrow();
 

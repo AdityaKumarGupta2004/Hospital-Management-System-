@@ -9,6 +9,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -23,12 +24,14 @@ public class PatientService {
     private final ModelMapper modelMapper;
 
     @Transactional
+    @Cacheable(cacheNames = "patients", key = "#patientId")
     public PatientResponseDto getPatientById(Long patientId) {
         Patient patient = patientRepository.findById(patientId).orElseThrow(() -> new EntityNotFoundException("Patient Not " +
                 "Found with id: " + patientId));
         return modelMapper.map(patient, PatientResponseDto.class);
     }
 
+    @Cacheable(cacheNames = "patients", key = "allPatients")
     public List<PatientResponseDto> getAllPatients(Integer pageNumber, Integer pageSize) {
         return patientRepository.findAllPatients(PageRequest.of(pageNumber, pageSize))
                 .stream()
